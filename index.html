@@ -1,156 +1,761 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crop Database</title>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #24292f;
-            background-color: #f6f8fa;
-            padding: 20px;
-            margin: 0;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-        }
-        h1 {
-            border-bottom: 1px solid #d8dee4;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        table.dataTable {
-            font-size: 14px;
-            width: 100% !important;
-        }
-        table.dataTable thead th {
-            background-color: #f0f2f5;
-            color: #24292f;
-            border-bottom: 2px solid #d0d7de !important;
-        }
-        .season-tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-right: 4px;
-            text-transform: uppercase;
-        }
-        .spring { background: #e6ffed; color: #1a7f37; border: 1px solid #acf2bd; }
-        .summer { background: #fff8c5; color: #9a6700; border: 1px solid #f2e394; }
-        .autumn { background: #ffebe9; color: #cf222e; border: 1px solid #ffc1c0; }
-        .winter { background: #ddf4ff; color: #0969da; border: 1px solid #b1e0ff; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crop Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --bg-dark: #e8dfd3;
+      --card: #faf6ef;
+      --card-hover: #fff9f0;
+      --border: #d4c4a8;
+      --text: #5c4a3d;
+      --text-muted: #8a7a6a;
+      --accent: #7a9e7e;
+      --accent-warm: #c49a6c;
+      --accent-terracotta: #c4846a;
+      --profit-high: #7a9e7e;
+      --profit-mid: #b8a86a;
+      --profit-low: #c4846a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Crimson Pro', serif;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .season-btn, .shop-btn {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .season-btn::before, .shop-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255,255,255,0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s ease, height 0.4s ease;
+    }
+
+    .season-btn:hover::before, .shop-btn:hover::before {
+      width: 200%;
+      height: 200%;
+    }
+
+    .season-btn.active, .shop-btn.active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(122, 158, 126, 0.3);
+      color: white;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background-color: var(--card-hover);
+      transform: translateX(4px);
+    }
+
+    .profit-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .profit-high {
+      background: rgba(122, 158, 126, 0.2);
+      color: #5a7e5e;
+    }
+
+    .profit-medium {
+      background: rgba(184, 168, 106, 0.2);
+      color: #8a7a4a;
+    }
+
+    .profit-low {
+      background: rgba(196, 132, 106, 0.2);
+      color: #9a6a4a;
+    }
+
+    .sort-icon {
+      opacity: 0.3;
+      transition: opacity 0.2s ease;
+    }
+
+    th:hover .sort-icon {
+      opacity: 0.7;
+    }
+
+    th.sorted .sort-icon {
+      opacity: 1;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .floating-leaf {
+      position: fixed;
+      pointer-events: none;
+      opacity: 0.15;
+      z-index: -1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .season-btn::before, .shop-btn::before {
+        display: none;
+      }
+      tbody tr:hover {
+        transform: none;
+      }
+      .fade-in {
+        animation: none;
+        opacity: 1;
+      }
+      .floating-leaf {
+        display: none;
+      }
+    }
+
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 10px;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 0.75rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+
+    .stat-card {
+      backdrop-filter: blur(10px);
+      background: rgba(250, 246, 239, 0.8);
+    }
+  </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
+  <!-- Floating decorative elements -->
+  <svg class="floating-leaf" style="top: 10%; left: 5%; width: 60px;" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1.5-3 2-6.5 2-10S13.5 5 12 2z" fill="#7a9e7e"/>
+  </svg>
+  <svg class="floating-leaf" style="top: 30%; right: 8%; width: 40px;" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1.5-3 2-6.5 2-10S13.5 5 12 2z" fill="#c49a6c"/>
+  </svg>
+  <svg class="floating-leaf" style="bottom: 20%; left: 3%; width: 50px;" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1.5-3 2-6.5 2-10S13.5 5 12 2z" fill="#c4846a"/>
+  </svg>
 
-<div class="container">
-    <h1>Crops Database</h1>
-    <table id="cropsTable" class="display responsive nowrap" style="width:100%">
-        <thead>
-            <tr>
-                <th>Crop</th>
-                <th>Sell Price</th>
-                <th>Seed Price</th>
-                <th>Shop</th>
-                <th>Season</th>
-                <th>Yield</th>
-                <th>Grow Time</th>
-                <th>Regrow</th>
-                <th>Notes</th>
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="text-center mb-8 fade-in">
+      <h1 class="text-4xl md:text-5xl font-bold mb-2" style="color: var(--text);">Crop Guide</h1>
+      <p class="text-lg" style="color: var(--text-muted);">Your cozy companion for profitable farming</p>
+    </header>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 fade-in stagger-1">
+      <div class="stat-card rounded-xl p-4 border" style="border-color: var(--border);">
+        <p class="text-sm" style="color: var(--text-muted);">Total Crops</p>
+        <p class="text-2xl font-bold" style="color: var(--accent);" id="total-crops">0</p>
+      </div>
+      <div class="stat-card rounded-xl p-4 border" style="border-color: var(--border);">
+        <p class="text-sm" style="color: var(--text-muted);">Most Profitable</p>
+        <p class="text-lg font-bold" style="color: var(--profit-high);" id="top-crop">-</p>
+      </div>
+      <div class="stat-card rounded-xl p-4 border" style="border-color: var(--border);">
+        <p class="text-sm" style="color: var(--text-muted);">Avg Profit/Day</p>
+        <p class="text-2xl font-bold" style="color: var(--accent-warm);" id="avg-profit">0</p>
+      </div>
+      <div class="stat-card rounded-xl p-4 border" style="border-color: var(--border);">
+        <p class="text-sm" style="color: var(--text-muted);">Showing</p>
+        <p class="text-2xl font-bold" style="color: var(--accent-terracotta);" id="showing-count">0</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6 fade-in stagger-2">
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <span class="font-semibold" style="color: var(--text-muted);">Season:</span>
+        <div class="flex flex-wrap gap-2" id="season-filters">
+          <button class="season-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-season="all">
+            All Seasons
+          </button>
+          <button class="season-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-season="spring">
+            Spring
+          </button>
+          <button class="season-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-season="summer">
+            Summer
+          </button>
+          <button class="season-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-season="autumn">
+            Autumn
+          </button>
+          <button class="season-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-season="winter">
+            Winter
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-semibold" style="color: var(--text-muted);">Shop:</span>
+        <div class="flex flex-wrap gap-2" id="shop-filters">
+          <button class="shop-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-shop="all">
+            All Sources
+          </button>
+          <button class="shop-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-shop="market">
+            Market
+          </button>
+          <button class="shop-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-shop="master">
+            Master Cultivator
+          </button>
+          <button class="shop-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-shop="wandering">
+            Wandering Winemaker
+          </button>
+          <button class="shop-btn px-4 py-2 rounded-full text-sm font-medium border" 
+                  style="background: var(--card); border-color: var(--border); color: var(--text);"
+                  data-shop="wild">
+            Found in Wild
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="mb-6 fade-in stagger-3">
+      <div class="relative max-w-md">
+        <input type="text" 
+               id="search-input"
+               placeholder="Search crops..."
+               class="w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all"
+               style="background: var(--card); border-color: var(--border); color: var(--text); --tw-ring-color: var(--accent);">
+        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="rounded-2xl border overflow-hidden fade-in stagger-4" style="background: var(--card); border-color: var(--border);">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr style="background: var(--bg-dark);">
+              <th class="px-4 py-4 text-left cursor-pointer hover:bg-opacity-80 transition-colors" data-sort="name">
+                <div class="flex items-center gap-2">
+                  Crop
+                  <svg class="sort-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                </div>
+              </th>
+              <th class="px-4 py-4 text-left cursor-pointer hover:bg-opacity-80 transition-colors" data-sort="sellPrice">
+                <div class="flex items-center gap-2">
+                  Sell Price
+                  <svg class="sort-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                </div>
+              </th>
+              <th class="px-4 py-4 text-left cursor-pointer hover:bg-opacity-80 transition-colors" data-sort="seedPrice">
+                <div class="flex items-center gap-2">
+                  Seed Price
+                  <svg class="sort-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                </div>
+              </th>
+              <th class="px-4 py-4 text-left">Shop</th>
+              <th class="px-4 py-4 text-left">Season</th>
+              <th class="px-4 py-4 text-left">Yield</th>
+              <th class="px-4 py-4 text-left cursor-pointer hover:bg-opacity-80 transition-colors" data-sort="growTime">
+                <div class="flex items-center gap-2">
+                  Grow Time
+                  <svg class="sort-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                </div>
+              </th>
+              <th class="px-4 py-4 text-left">Regrow</th>
+              <th class="px-4 py-4 text-left cursor-pointer hover:bg-opacity-80 transition-colors sorted" data-sort="profitPerDay">
+                <div class="flex items-center gap-2">
+                  Profit/Day
+                  <svg class="sort-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
+                </div>
+              </th>
+              <th class="px-4 py-4 text-left">Notes</th>
             </tr>
-        </thead>
-        <tbody>
-            <tr><td>Aloe Vera</td><td>16</td><td>Not Sold</td><td></td><td>Summer</td><td>1-2</td><td>5-8</td><td></td><td>Found in Flourishing Dunes biome. Harvestable at stage 5. Drops Yellow Blossoms at higher stages.</td></tr>
-            <tr><td>Ancient Fruit</td><td>128</td><td>Not Sold</td><td></td><td>Spring, Summer, Autumn</td><td>1</td><td>10</td><td></td><td>Seeds are incredibly rare. An Ancient Cog will likely be the easiest route. Found in Palm and Grimwood Supply Crates in the Skull Caverns.</td></tr>
-            <tr><td>Barley</td><td>11</td><td>2</td><td>Market</td><td>Autumn, Winter</td><td>2</td><td>4</td><td></td><td></td></tr>
-            <tr><td>Beetroot</td><td>24</td><td>4</td><td>Market</td><td>Autumn</td><td>1</td><td>3</td><td></td><td></td></tr>
-            <tr><td>Bell Pepper</td><td>32</td><td>64</td><td>Market</td><td>Summer</td><td>1-3</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Blueberry</td><td>24</td><td>4</td><td>Market</td><td>Summer</td><td>3-4</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Broccoli</td><td>54</td><td>Not Sold</td><td>Market, Master Cultivator</td><td>Autumn</td><td>1</td><td>5</td><td></td><td>Found is Spruce Supply Crates.</td></tr>
-            <tr><td>Cabbage</td><td>70</td><td>64</td><td>Master Cultivator</td><td>Autumn, Winter</td><td>1</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Carrot</td><td>23</td><td>2</td><td>Market</td><td>Sprint, Autumn</td><td>1-3</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Cauliflower</td><td>48</td><td>6</td><td>Market</td><td>Spring</td><td>2</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Coffee Beans</td><td>8</td><td>Not Sold</td><td></td><td>Spring</td><td>1-2</td><td>3</td><td></td><td>Found in Jungle-like biomes. No seeds, simply plant the fruit.</td></tr>
-            <tr><td>Corn</td><td>28</td><td>4</td><td>Market</td><td>Summer, Autumn</td><td>1</td><td>4</td><td></td><td></td></tr>
-            <tr><td>Cotton</td><td>24</td><td>Not Sold</td><td></td><td>Summer</td><td>2</td><td>3</td><td></td><td>Found is green balloons, dig spots and Forest Mojos.</td></tr>
-            <tr><td>Cucumber</td><td>72</td><td>64</td><td>Market, Master Cultivator</td><td>Spring</td><td>1</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Eggplant</td><td>42</td><td>8</td><td>Market</td><td>Autumn</td><td>1</td><td>6</td><td></td><td></td></tr>
-            <tr><td>Flax</td><td>68</td><td>48</td><td>Market</td><td>Spring</td><td>1</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Foul Berries</td><td>4</td><td>Not Sold</td><td></td><td>Autumn</td><td>2/4</td><td>4/5</td><td>1/2 Days</td><td>Found in Maple Forest biomes. No seeds, simply plant the fruit. Has 2 harvestable stages.</td></tr>
-            <tr><td>Garlic</td><td>27</td><td>32</td><td>Market, Master Cultivator</td><td>Spring</td><td>1-3</td><td>5</td><td></td><td>Seeds bought from Master Cultivator only.</td></tr>
-            <tr><td>Gearo Berries</td><td>24</td><td>Not Sold</td><td></td><td>Spring</td><td>1-2</td><td>4</td><td>2 Days</td><td>Obtained from Botania's Elven Trade and rarely from Juicy Slime plorts. No seeds, simply plant the fruit.</td></tr>
-            <tr><td>Ghost Pepper</td><td>36</td><td>64</td><td>Market, Master Cultivator</td><td>Summer</td><td>2-3</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Ginger</td><td>24</td><td>4</td><td>Market</td><td>Winter</td><td>1</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Grapes</td><td>20</td><td>256</td><td>Wandering Winemaker</td><td>Spring, Autumn</td><td>3-4</td><td>3</td><td>2</td><td>Planted on grape stem.</td></tr>
-            <tr><td>Jungle Grapes</td><td>20</td><td>512</td><td>Wandering Winemaker</td><td>Summer</td><td>1-2/3-4</td><td>2/3</td><td>2/3</td><td>Planted on lattice. Has two harvestable stages.</td></tr>
-            <tr><td>Savanna Grapes</td><td>20</td><td>512</td><td>Wandering Winemaker</td><td>Spring, Summer</td><td>3-4</td><td>3</td><td>2</td><td>Planted on grape stem.</td></tr>
-            <tr><td>Taiga Grapes</td><td>20</td><td>512</td><td>Wandering Winemaker</td><td>Winter</td><td>3-4</td><td>2</td><td>1</td><td>Planted on grape stem.</td></tr>
-            <tr><td>Nether Grapes</td><td>24</td><td>2048</td><td>Wandering Winemaker</td><td>Spring, Autumn</td><td>3-4</td><td>3</td><td>2</td><td>Planted on grape stem.</td></tr>
-            <tr><td>Green Tea</td><td>4</td><td>Not Sold</td><td></td><td>Spring, Summer, Autumn</td><td>1</td><td>3</td><td></td><td>Found in Green Balloons. Green Tea Leaf blocks can be placed in-world to slowly dry. No seeds, simply plant the leaf.</td></tr>
-            <tr><td>Hops</td><td>21</td><td>Not Sold</td><td></td><td>Summer</td><td>2</td><td>6</td><td></td><td>Found growing in the world.</td></tr>
-            <tr><td>Lettuce</td><td>24</td><td>4</td><td>Market</td><td>Spring</td><td>1</td><td>3</td><td></td><td></td></tr>
-            <tr><td>Oat</td><td>36</td><td>4</td><td>Market</td><td>Summer</td><td>5</td><td></td><td></td><td></td></tr>
-            <tr><td>Onion</td><td>12</td><td>4</td><td>Market</td><td>Spring</td><td>1-4</td><td>4</td><td></td><td></td></tr>
-            <tr><td>Peanut</td><td>24</td><td>512</td><td>Market</td><td>Autumn</td><td>1-3</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Pitcher Plant</td><td>64</td><td>Not Sold</td><td></td><td>Summer</td><td>1</td><td>4</td><td></td><td>Found by Sniffers.</td></tr>
-            <tr><td>Potato</td><td>24</td><td>2</td><td></td><td>Spring</td><td>1-2</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Rice</td><td>16</td><td>256</td><td></td><td>Summer, Autumn</td><td>1</td><td>6</td><td>3</td><td></td></tr>
-            <tr><td>Rooibos</td><td>8</td><td>Not Sold</td><td></td><td>Summer</td><td>2</td><td>3</td><td></td><td>Found growing in the world.</td></tr>
-            <tr><td>Strawberry</td><td>18</td><td>3</td><td>Market</td><td>Spring</td><td>1</td><td>5</td><td></td><td>Found growing in the world.</td></tr>
-            <tr><td>Sweet Berries</td><td>2</td><td>Not Sold</td><td></td><td>Spring, Autumn</td><td>1-2/2-3</td><td>2-3</td><td>1-2</td><td>Found growing in the world. Has two harvestable stages.</td></tr>
-            <tr><td>Sweet Potato</td><td>20</td><td>64</td><td>Market</td><td>Autumn</td><td>1-4</td><td>5</td><td></td><td></td></tr>
-            <tr><td>Tomato</td><td>24</td><td>4</td><td>Market</td><td>Spring, Summer, Autumn</td><td>1</td><td>4</td><td>3</td><td></td></tr>
-            <tr><td>Torchflower</td><td>128</td><td>Not Sold</td><td></td><td>Summer</td><td>1</td><td>4</td><td></td><td>Found by Sniffers. Dropped by Forest Mojos. Can be found in sandstone and terracotta dig spots.</td></tr>
-            <tr><td>Tubabacco</td><td>87</td><td>512</td><td>Market, Master Cultivator</td><td>Spring, Winter</td><td>1</td><td>9</td><td></td><td></td></tr>
-            <tr><td>Turnip</td><td>36</td><td>6</td><td>Market</td><td>Spring</td><td>1</td><td>5</td><td></td><td></td></tr>
-            <tr><td>Wheat</td><td>46</td><td>8</td><td>Market</td><td>Summer, Autumn</td><td>1</td><td>7</td><td></td><td></td></tr>
-            <tr><td>Wild Berries</td><td>8</td><td>Not Sold</td><td></td><td>Winter</td><td>1-2</td><td>2/3</td><td>1/2</td><td>Found growing in the world. No seeds, simply plant the fruit.</td></tr>
-            <tr><td>Yerba Mate</td><td>6</td><td>Not Sold</td><td></td><td>Spring, Summer, Autumn</td><td>1-4</td><td>3</td><td></td><td>Found growing in the world. No seeds, simply plant the leaf.</td></tr>
-            <tr><td>Zucchini</td><td>72</td><td>Not Sold</td><td></td><td>Summer</td><td>1-2</td><td>7</td><td></td><td>Wild Zucchini found in the world can be milled or crushed with Create to make seeds.</td></tr>
-        </tbody>
-    </table>
-</div>
+          </thead>
+          <tbody id="crop-table-body">
+            <!-- Rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <!-- Profit Guide -->
+    <div class="mt-8 p-6 rounded-2xl border fade-in stagger-5" style="background: var(--card); border-color: var(--border);">
+      <h3 class="text-xl font-bold mb-3" style="color: var(--text);">Profit Calculation Guide</h3>
+      <p class="mb-2" style="color: var(--text-muted);">
+        Profit per day is calculated as: <code class="px-2 py-1 rounded" style="background: var(--bg-dark);">(Sell Price × Avg Yield) ÷ Grow Time</code>
+      </p>
+      <p style="color: var(--text-muted);">
+        For regrowable crops, the first harvest takes the full grow time, then each subsequent harvest takes the regrow time.
+        Crops with multiple harvest stages have their yield averaged.
+      </p>
+    </div>
 
-<script>
-    $(document).ready(function() {
-        // Initialize DataTable
-        var table = $('#cropsTable').DataTable({
-            responsive: true,
-            pageLength: 25,
-            order: [[0, 'asc']], // Sort by Crop Name by default
-            columnDefs: [
-                {
-                    targets: 4, // Season column
-                    render: function(data, type, row) {
-                        if (type === 'display') {
-                            return data.split(', ').map(season => {
-                                let cls = season.toLowerCase().trim();
-                                return `<span class="season-tag ${cls}">${season}</span>`;
-                            }).join(' ');
-                        }
-                        return data;
-                    }
-                }
-            ]
+    <!-- Footer -->
+    <footer class="mt-8 text-center" style="color: var(--text-muted);">
+      <p>Happy farming! Data sourced from in-game information.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Crop data
+    const crops = [
+      { name: "Aloe Vera", sellPrice: 16, seedPrice: null, shop: [], season: ["Summer"], yield: "1-2", growTime: "5-8", regrowTime: null, notes: "Found in Flourishing Dunes biome. Harvestable at stage 5. Drops Yellow Blossoms at higher stages." },
+      { name: "Ancient Fruit", sellPrice: 128, seedPrice: null, shop: [], season: ["Spring", "Summer", "Autumn"], yield: "1", growTime: "10", regrowTime: null, notes: "Seeds are incredibly rare. An Ancient Cog will likely be the easiest route. Found in Palm and Grimwood Supply Crates in the Skull Caverns." },
+      { name: "Barley", sellPrice: 11, seedPrice: 2, shop: ["Market"], season: ["Autumn", "Winter"], yield: "2", growTime: "4", regrowTime: null, notes: "" },
+      { name: "Beetroot", sellPrice: 24, seedPrice: 4, shop: ["Market"], season: ["Autumn"], yield: "1", growTime: "3", regrowTime: null, notes: "" },
+      { name: "Bell Pepper", sellPrice: 32, seedPrice: 64, shop: ["Market"], season: ["Summer"], yield: "1-3", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Blueberry", sellPrice: 24, seedPrice: 4, shop: ["Market"], season: ["Summer"], yield: "3-4", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Broccoli", sellPrice: 54, seedPrice: null, shop: ["Market", "Master Cultivator"], season: ["Autumn"], yield: "1", growTime: "5", regrowTime: null, notes: "Found is Spruce Supply Crates." },
+      { name: "Cabbage", sellPrice: 70, seedPrice: 64, shop: ["Master Cultivator"], season: ["Autumn", "Winter"], yield: "1", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Carrot", sellPrice: 23, seedPrice: 2, shop: ["Market"], season: ["Spring", "Autumn"], yield: "1-3", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Cauliflower", sellPrice: 48, seedPrice: 6, shop: ["Market"], season: ["Spring"], yield: "2", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Coffee Beans", sellPrice: 8, seedPrice: null, shop: [], season: ["Spring"], yield: "1-2", growTime: "3", regrowTime: null, notes: "Found in Jungle-like biomes. No seeds, simply plant the fruit." },
+      { name: "Corn", sellPrice: 28, seedPrice: 4, shop: ["Market"], season: ["Summer", "Autumn"], yield: "1", growTime: "4", regrowTime: null, notes: "" },
+      { name: "Cotton", sellPrice: 24, seedPrice: null, shop: [], season: ["Summer"], yield: "2", growTime: "3", regrowTime: null, notes: "Found is green balloons, dig spots and Forest Mojos." },
+      { name: "Cucumber", sellPrice: 72, seedPrice: 64, shop: ["Market", "Master Cultivator"], season: ["Spring"], yield: "1", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Eggplant", sellPrice: 42, seedPrice: 8, shop: ["Market"], season: ["Autumn"], yield: "1", growTime: "6", regrowTime: null, notes: "" },
+      { name: "Flax", sellPrice: 68, seedPrice: 48, shop: ["Market"], season: ["Spring"], yield: "1", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Foul Berries", sellPrice: 4, seedPrice: null, shop: [], season: ["Autumn"], yield: "2/4", growTime: "4/5", regrowTime: "1/2 Days", notes: "Found in Maple Forest biomes. No seeds, simply plant the fruit. Has 2 harvestable stages." },
+      { name: "Garlic", sellPrice: 27, seedPrice: 32, shop: ["Market", "Master Cultivator"], season: ["Spring"], yield: "1-3", growTime: "5", regrowTime: null, notes: "Seeds bought from Master Cultivator only." },
+      { name: "Gearo Berries", sellPrice: 24, seedPrice: null, shop: [], season: ["Spring"], yield: "1-2", growTime: "4", regrowTime: "2 Days", notes: "Obtained from Botania's Elven Trade and rarely from Juicy Slime plorts. No seeds, simply plant the fruit." },
+      { name: "Ghost Pepper", sellPrice: 36, seedPrice: 64, shop: ["Market", "Master Cultivator"], season: ["Summer"], yield: "2-3", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Ginger", sellPrice: 24, seedPrice: 4, shop: ["Market"], season: ["Winter"], yield: "1", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Grapes", sellPrice: 20, seedPrice: 256, shop: ["Wandering Winemaker"], season: ["Spring", "Autumn"], yield: "3-4", growTime: "3", regrowTime: "2", notes: "Planted on grape stem." },
+      { name: "Jungle Grapes", sellPrice: 20, seedPrice: 512, shop: ["Wandering Winemaker"], season: ["Summer"], yield: "1-2/3-4", growTime: "2/3", regrowTime: "2/3", notes: "Planted on lattice. Has two harvestable stages, you wont see the grapes in the first stage and it drops less than the second stage." },
+      { name: "Savanna Grapes", sellPrice: 20, seedPrice: 512, shop: ["Wandering Winemaker"], season: ["Spring", "Summer"], yield: "3-4", growTime: "3", regrowTime: "2", notes: "Planted on grape stem." },
+      { name: "Taiga Grapes", sellPrice: 20, seedPrice: 512, shop: ["Wandering Winemaker"], season: ["Winter"], yield: "3-4", growTime: "2", regrowTime: "1", notes: "Planted on grape stem." },
+      { name: "Nether Grapes", sellPrice: 24, seedPrice: 2048, shop: ["Wandering Winemaker"], season: ["Spring", "Autumn"], yield: "3-4", growTime: "3", regrowTime: "2", notes: "Planted on grape stem." },
+      { name: "Green Tea", sellPrice: 4, seedPrice: null, shop: [], season: ["Spring", "Summer", "Autumn"], yield: "1", growTime: "3", regrowTime: null, notes: "Found in Green Balloons. Green Tea Leaf blocks can be placed in-world to slowly dry. No seeds, simply plant the leaf." },
+      { name: "Hops", sellPrice: 21, seedPrice: null, shop: [], season: ["Summer"], yield: "2", growTime: "6", regrowTime: null, notes: "Found growing in the world." },
+      { name: "Lettuce", sellPrice: 24, seedPrice: 4, shop: ["Market"], season: ["Spring"], yield: "1", growTime: "3", regrowTime: null, notes: "" },
+      { name: "Oat", sellPrice: 36, seedPrice: 4, shop: ["Market"], season: ["Summer"], yield: "5", growTime: null, regrowTime: null, notes: "" },
+      { name: "Onion", sellPrice: 12, seedPrice: 4, shop: ["Market"], season: ["Spring"], yield: "1-4", growTime: "4", regrowTime: null, notes: "" },
+      { name: "Peanut", sellPrice: 24, seedPrice: 512, shop: ["Market"], season: ["Autumn"], yield: "1-3", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Pitcher Plant", sellPrice: 64, seedPrice: null, shop: [], season: ["Summer"], yield: "1", growTime: "4", regrowTime: null, notes: "Found by Sniffers." },
+      { name: "Potato", sellPrice: 24, seedPrice: 2, shop: [], season: ["Spring"], yield: "1-2", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Rice", sellPrice: 16, seedPrice: 256, shop: [], season: ["Summer", "Autumn"], yield: "1", growTime: "6", regrowTime: "3", notes: "" },
+      { name: "Rooibos", sellPrice: 8, seedPrice: null, shop: [], season: ["Summer"], yield: "2", growTime: "3", regrowTime: null, notes: "Found growing in the world." },
+      { name: "Strawberry", sellPrice: 18, seedPrice: 3, shop: ["Market"], season: ["Spring"], yield: "1", growTime: "5", regrowTime: null, notes: "Found growing in the world." },
+      { name: "Sweet Berries", sellPrice: 2, seedPrice: null, shop: [], season: ["Spring", "Autumn"], yield: "1-2/2-3", growTime: "2-3", regrowTime: "1-2", notes: "Found growing in the world. Has two harvestable stages." },
+      { name: "Sweet Potato", sellPrice: 20, seedPrice: 64, shop: ["Market"], season: ["Autumn"], yield: "1-4", growTime: "5", regrowTime: null, notes: "" },
+      { name: "Tomato", sellPrice: 24, seedPrice: 4, shop: ["Market"], season: ["Spring", "Summer", "Autumn"], yield: "1", growTime: "4", regrowTime: "3", notes: "" },
+      { name: "Torchflower", sellPrice: 128, seedPrice: null, shop: [], season: ["Summer"], yield: "1", growTime: "4", regrowTime: null, notes: "Found by Sniffers. Dropped by Forest Mojos. Can be found in sandstone and terracotta dig spots." },
+      { name: "Tubabacco", sellPrice: 87, seedPrice: 512, shop: ["Market", "Master Cultivator"], season: ["Spring", "Winter"], yield: "1", growTime: "9", regrowTime: null, notes: "" },
+      { name: "Turnip", sellPrice: 36, seedPrice: 6, shop: ["Market"], season: ["Spring"], yield: "1", growTime: "5", regrowTime: null, notes: "" },
+      { name: "Wheat", sellPrice: 46, seedPrice: 8, shop: ["Market"], season: ["Summer", "Autumn"], yield: "1", growTime: "7", regrowTime: null, notes: "" },
+      { name: "Wild Berries", sellPrice: 8, seedPrice: null, shop: [], season: ["Winter"], yield: "1-2", growTime: "2/3", regrowTime: "1/2", notes: "Found growing in the world. No seeds, simply plant the fruit." },
+      { name: "Yerba Mate", sellPrice: 6, seedPrice: null, shop: [], season: ["Spring", "Summer", "Autumn"], yield: "1-4", growTime: "3", regrowTime: null, notes: "Found growing in the world. No seeds, simply plant the leaf." },
+      { name: "Zucchini", sellPrice: 72, seedPrice: null, shop: [], season: ["Summer"], yield: "1-2", growTime: "7", regrowTime: null, notes: "Wild Zucchini found in the world can be milled or crushed with Create to make seeds. Seeds can be found from Palm and Grimwood Supply Crates. Obtained from Barrel Golem bartering minigame. Dropped from Forest Mojos." }
+    ];
+
+    // State
+    let currentSeason = 'all';
+    let currentShop = 'all';
+    let currentSort = 'profitPerDay';
+    let sortDirection = 'desc';
+    let searchQuery = '';
+
+    // Helper functions
+    function parseAverageYield(yieldStr) {
+      if (!yieldStr) return 1;
+      if (yieldStr.includes('/')) {
+        const parts = yieldStr.split('/').map(p => parseAverageYield(p));
+        return parts.reduce((a, b) => a + b, 0) / parts.length;
+      }
+      if (yieldStr.includes('-')) {
+        const [min, max] = yieldStr.split('-').map(Number);
+        return (min + max) / 2;
+      }
+      return parseFloat(yieldStr) || 1;
+    }
+
+    function parseGrowTime(growTimeStr) {
+      if (!growTimeStr) return 10;
+      if (growTimeStr.includes('/')) {
+        const parts = growTimeStr.split('/').map(p => parseFloat(p) || 10);
+        return parts.reduce((a, b) => a + b, 0) / parts.length;
+      }
+      if (growTimeStr.includes('-')) {
+        const [min, max] = growTimeStr.split('-').map(Number);
+        return (min + max) / 2;
+      }
+      return parseFloat(growTimeStr) || 10;
+    }
+
+    function calculateProfitPerDay(crop) {
+      const avgYield = parseAverageYield(crop.yield);
+      const growTime = parseGrowTime(crop.growTime);
+      if (growTime <= 0) return 0;
+      return (crop.sellPrice * avgYield) / growTime;
+    }
+
+    function getProfitClass(profit) {
+      if (profit >= 15) return 'profit-high';
+      if (profit >= 8) return 'profit-medium';
+      return 'profit-low';
+    }
+
+    function getProfitLabel(profit) {
+      if (profit >= 15) return 'High';
+      if (profit >= 8) return 'Medium';
+      return 'Low';
+    }
+
+    function seasonMatchesFilter(cropSeasons, filter) {
+      if (filter === 'all') return true;
+      return cropSeasons.some(s => s.toLowerCase().includes(filter.toLowerCase()));
+    }
+
+    function shopMatchesFilter(cropShops, filter) {
+      if (filter === 'all') return true;
+      if (filter === 'wild') return cropShops.length === 0;
+      if (filter === 'market') return cropShops.some(s => s.includes('Market'));
+      if (filter === 'master') return cropShops.some(s => s.includes('Master'));
+      if (filter === 'wandering') return cropShops.some(s => s.includes('Wandering'));
+      return true;
+    }
+
+    function matchesSearch(crop, query) {
+      if (!query) return true;
+      const q = query.toLowerCase();
+      return crop.name.toLowerCase().includes(q) ||
+             crop.notes.toLowerCase().includes(q) ||
+             crop.season.some(s => s.toLowerCase().includes(q));
+    }
+
+    function sortCrops(cropList, sortKey, direction) {
+      return [...cropList].sort((a, b) => {
+        let valA, valB;
+        
+        switch (sortKey) {
+          case 'name':
+            valA = a.name;
+            valB = b.name;
+            break;
+          case 'sellPrice':
+            valA = a.sellPrice;
+            valB = b.sellPrice;
+            break;
+          case 'seedPrice':
+            valA = a.seedPrice || 99999;
+            valB = b.seedPrice || 99999;
+            break;
+          case 'growTime':
+            valA = parseGrowTime(a.growTime);
+            valB = parseGrowTime(b.growTime);
+            break;
+          case 'profitPerDay':
+          default:
+            valA = calculateProfitPerDay(a);
+            valB = calculateProfitPerDay(b);
+        }
+
+        if (typeof valA === 'string') {
+          return direction === 'asc' 
+            ? valA.localeCompare(valB) 
+            : valB.localeCompare(valA);
+        }
+        return direction === 'asc' ? valA - valB : valB - valA;
+      });
+    }
+
+    function formatSeasons(seasons) {
+      const colors = {
+        'Spring': '#7a9e7e',
+        'Summer': '#c49a6c',
+        'Autumn': '#c4846a',
+        'Winter': '#8a9eb0'
+      };
+      return seasons.map(s => 
+        `<span class="inline-block px-2 py-1 rounded-md text-xs font-medium mr-1 mb-1" style="background: ${colors[s] || '#d4c4a8'}20; color: ${colors[s] || '#5c4a3d'}">${s}</span>`
+      ).join('');
+    }
+
+    function formatShop(shops) {
+      if (shops.length === 0) {
+        return '<span class="italic" style="color: var(--text-muted);">Wild/Found</span>';
+      }
+      return shops.map(s => 
+        `<span class="inline-block px-2 py-1 rounded-md text-xs mr-1 mb-1" style="background: var(--bg-dark);">${s}</span>`
+      ).join('');
+    }
+
+    function renderTable() {
+      let filtered = crops.filter(crop => 
+        seasonMatchesFilter(crop.season, currentSeason) &&
+        shopMatchesFilter(crop.shop, currentShop) &&
+        matchesSearch(crop, searchQuery)
+      );
+
+      filtered = sortCrops(filtered, currentSort, sortDirection);
+
+      const tbody = document.getElementById('crop-table-body');
+      tbody.innerHTML = '';
+
+      filtered.forEach((crop, index) => {
+        const profit = calculateProfitPerDay(crop);
+        const profitClass = getProfitClass(profit);
+        const profitLabel = getProfitLabel(profit);
+
+        const row = document.createElement('tr');
+        row.className = 'border-t fade-in';
+        row.style.borderColor = 'var(--border)';
+        row.style.animationDelay = `${index * 0.02}s`;
+
+        row.innerHTML = `
+          <td class="px-4 py-3 font-semibold">${crop.name}</td>
+          <td class="px-4 py-3">${crop.sellPrice}g</td>
+          <td class="px-4 py-3">${crop.seedPrice ? crop.seedPrice + 'g' : '<span class="italic" style="color: var(--text-muted);">Not Sold</span>'}</td>
+          <td class="px-4 py-3">${formatShop(crop.shop)}</td>
+          <td class="px-4 py-3">${formatSeasons(crop.season)}</td>
+          <td class="px-4 py-3">${crop.yield || '-'}</td>
+          <td class="px-4 py-3">${crop.growTime || '-'} days</td>
+          <td class="px-4 py-3">${crop.regrowTime || '-'}</td>
+          <td class="px-4 py-3">
+            <span class="profit-badge ${profitClass} tooltip" data-tooltip="${profit.toFixed(1)}g per day">
+              ${profitLabel}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-xs max-w-xs" style="color: var(--text-muted);">${crop.notes || '-'}</td>
+        `;
+
+        tbody.appendChild(row);
+      });
+
+      // Update stats
+      document.getElementById('total-crops').textContent = crops.length;
+      document.getElementById('showing-count').textContent = filtered.length;
+
+      if (filtered.length > 0) {
+        const sortedByProfit = sortCrops(filtered, 'profitPerDay', 'desc');
+        document.getElementById('top-crop').textContent = sortedByProfit[0].name;
+        
+        const avgProfit = filtered.reduce((sum, c) => sum + calculateProfitPerDay(c), 0) / filtered.length;
+        document.getElementById('avg-profit').textContent = avgProfit.toFixed(1) + 'g';
+      } else {
+        document.getElementById('top-crop').textContent = '-';
+        document.getElementById('avg-profit').textContent = '-';
+      }
+    }
+
+    // Event listeners for Season Filters
+    const seasonButtons = document.querySelectorAll('.season-btn');
+    seasonButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Reset all season buttons
+        seasonButtons.forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'var(--card)';
+          b.style.borderColor = 'var(--border)';
+          b.style.color = 'var(--text)'; // Reset text color
         });
+        
+        // Set active button
+        btn.classList.add('active');
+        btn.style.background = 'var(--accent)';
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'white';
+        
+        currentSeason = btn.dataset.season;
+        renderTable();
+      });
     });
-</script>
 
+    // Event listeners for Shop Filters
+    const shopButtons = document.querySelectorAll('.shop-btn');
+    shopButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Reset all shop buttons
+        shopButtons.forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'var(--card)';
+          b.style.borderColor = 'var(--border)';
+          b.style.color = 'var(--text)'; // Reset text color
+        });
+        
+        // Set active button
+        btn.classList.add('active');
+        btn.style.background = 'var(--accent-warm)';
+        btn.style.borderColor = 'var(--accent-warm)';
+        btn.style.color = 'white';
+        
+        currentShop = btn.dataset.shop;
+        renderTable();
+      });
+    });
+
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const sortKey = th.dataset.sort;
+        
+        if (currentSort === sortKey) {
+          sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort = sortKey;
+          sortDirection = 'desc';
+        }
+
+        document.querySelectorAll('th[data-sort]').forEach(t => t.classList.remove('sorted'));
+        th.classList.add('sorted');
+
+        renderTable();
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderTable();
+    });
+
+    // Initialize active button styles on load
+    document.querySelector('.season-btn[data-season="all"]').classList.add('active');
+    document.querySelector('.season-btn[data-season="all"]').style.background = 'var(--accent)';
+    document.querySelector('.season-btn[data-season="all"]').style.borderColor = 'var(--accent)';
+    document.querySelector('.season-btn[data-season="all"]').style.color = 'white';
+
+    document.querySelector('.shop-btn[data-shop="all"]').classList.add('active');
+    document.querySelector('.shop-btn[data-shop="all"]').style.background = 'var(--accent-warm)';
+    document.querySelector('.shop-btn[data-shop="all"]').style.borderColor = 'var(--accent-warm)';
+    document.querySelector('.shop-btn[data-shop="all"]').style.color = 'white';
+
+    // Initial render
+    renderTable();
+  </script>
 </body>
-
 </html>
